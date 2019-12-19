@@ -11,6 +11,8 @@ namespace BangazonAPI.Models
 
         public string Make { get; set; }
 
+        public int Model { get; set; }
+
         public DateTime PurchaseDate { get; set; }
 
         public DateTime DecomissionDate { get; set; }
