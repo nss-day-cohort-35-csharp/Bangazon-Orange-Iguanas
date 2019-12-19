@@ -152,7 +152,7 @@ https://bangazon-prototype-api.herokuapp.com/
 
 ## Plan
 
-First, you need to plan. Your team needs to use the official SQL script (see below) and build a  Bangazon ERD using [dbdiagram.io](dbdiagram.io). Once your team agrees that the ERD is complete, you must get it approved by your lead developer before you begin writing code for the API.
+First, you need to plan. Your team needs to use the official SQL script (see below) and build a  Bangazon ERD using [dbdiagram.io](https://dbdiagram.io). Once your team agrees that the ERD is complete, you must get it approved by your lead developer before you begin writing code for the API.
 
 ## Modeling
 
