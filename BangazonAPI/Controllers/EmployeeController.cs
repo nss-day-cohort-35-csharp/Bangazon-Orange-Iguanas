@@ -4,13 +4,9 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
-//using System;
-//using System.Collections.Generic;
-//using System.Linq;
 using System.Threading.Tasks;
 using BangazonAPI.Models;
 using Microsoft.AspNetCore.Http;
-//using Microsoft.AspNetCore.Http;
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace BangazonAPI.Controllers
@@ -33,9 +29,16 @@ namespace BangazonAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<List<Employee>> GetAllEmployees(
-            string firstName,
-            string lastName)
+        public async Task<IActionResult> GetAllEmployees(
+            [FromQuery] string firstName,
+            [FromQuery] string lastName) 
+        {
+            var employees = await getEmployees(firstName, lastName);
+            return Ok(employees);
+
+        }
+
+        private async Task<List<Employee>> getEmployees(string firstName, string lastName)
         {
             using (SqlConnection conn = Connection)
             {
@@ -80,7 +83,7 @@ namespace BangazonAPI.Controllers
         }
 
 
-        [HttpGet("{id}")]
+        [HttpGet("{id}", Name = "GetEmployee")]
         public async Task<IActionResult> Get([FromRoute] int id)
         {
             using (SqlConnection conn = Connection)
@@ -200,9 +203,9 @@ namespace BangazonAPI.Controllers
                     }
                 }
             }
-            catch(Exception)
+            catch (Exception)
             {
-                if(!EmployeeExists(id))
+                if (!EmployeeExists(id))
                 {
                     return NotFound();
                 }
@@ -221,7 +224,7 @@ namespace BangazonAPI.Controllers
 
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT Id, DepartmentId, IsSupervisor, ComputerId, Email FROM Employee WHERE id = Id";
+                    cmd.CommandText = @"SELECT Id, DepartmentId, IsSupervisor, ComputerId, Email FROM Employee WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
 
                     SqlDataReader reader = cmd.ExecuteReader();
