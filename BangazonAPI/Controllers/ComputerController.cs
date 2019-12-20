@@ -29,14 +29,14 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        
+
 
         //Get available computers
 
         [HttpGet]
         public async Task<IActionResult> GetAvailableComputers([FromQuery] bool? available)
         {
-            
+
 
 
             using (SqlConnection conn = Connection)
@@ -55,7 +55,7 @@ namespace BangazonAPI.Controllers
                     if (available == false)
                     {
                         cmd.CommandText += @" LEFT JOIN Employee e ON e.ComputerId = c.Id 
-                                            WHERE e.Id IS NOT NULL OR c.DecomissionDate IS NOT NULL"; 
+                                            WHERE e.Id IS NOT NULL OR c.DecomissionDate IS NOT NULL";
                     }
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
                     List<Computer> computers = new List<Computer>();
@@ -205,43 +205,75 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        //delete a computer record
+        //delete a computer record...computer cannot be deleted if it is currently assigned to an employee
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            try
+            if (!assignedToEmployee(id))
             {
-                using (SqlConnection conn = Connection)
+                try
                 {
-                    conn.Open();
-                    using (SqlCommand cmd = conn.CreateCommand())
-                    {
-                        cmd.CommandText = @"DELETE FROM Computer WHERE Id = @id";
-                        cmd.Parameters.Add(new SqlParameter("@id", id));
 
-                        int rowsAffected = cmd.ExecuteNonQuery();
-                        if (rowsAffected > 0)
+                    using (SqlConnection conn = Connection)
+                    {
+                        conn.Open();
+                        using (SqlCommand cmd = conn.CreateCommand())
                         {
-                            return new StatusCodeResult(StatusCodes.Status204NoContent);
+                            cmd.CommandText = @"DELETE FROM Computer WHERE Id = @id";
+                            cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                            int rowsAffected = await cmd.ExecuteNonQueryAsync();
+                            if (rowsAffected > 0)
+                            {
+                                return new StatusCodeResult(StatusCodes.Status204NoContent);
+                            }
+                            throw new Exception("No rows affected");
                         }
-                        throw new Exception("No rows affected");
+                    }
+
+                }
+                catch (Exception)
+                {
+                    if (!ComputerExists(id))
+                    {
+                        return new StatusCodeResult(StatusCodes.Status403Forbidden);
+                    }
+                    else
+                    {
+                        throw;
                     }
                 }
             }
-            catch (Exception)
+            else
             {
-                if (ComputerExists(id))
+                return new StatusCodeResult(StatusCodes.Status403Forbidden);
+            }
+        }
+        
+        //check to see if a computer is assigned to an employee
+
+        private bool assignedToEmployee(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
+                    cmd.CommandText = @"
+                        SELECT FirstName 
+                        FROM Employee
+                        WHERE ComputerId = @id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+
+                    return reader.Read();
                 }
             }
         }
 
+        //check to see if a computer exists
         private bool ComputerExists(int id)
         {
             using (SqlConnection conn = Connection)
