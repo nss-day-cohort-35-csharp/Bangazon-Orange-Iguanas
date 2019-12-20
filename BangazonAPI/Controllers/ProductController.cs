@@ -33,7 +33,10 @@ namespace BangazonAPI.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] string Title, [FromQuery] string Description)
+        public async Task<IActionResult> Get(
+            [FromQuery] string orderBy,
+            [FromQuery] string Title,
+            [FromQuery] string description)
         {
             using (SqlConnection conn = Connection)
             {
@@ -50,15 +53,26 @@ namespace BangazonAPI.Controllers
 
                     }
 
-                    if (!string.IsNullOrWhiteSpace(Title) || !string.IsNullOrWhiteSpace(Description))
+                    if (!string.IsNullOrWhiteSpace(Title))
                     {
                         cmd.CommandText += @" AND Title LIKE @Title";
-                        cmd.CommandText += @" AND Description LIKE @Description";
+                    
+                        
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(description))
+                    {
+                       
+                        cmd.CommandText += @" AND Description LIKE @description";
+
+                    }
+                    if (orderBy == "recent")
+                    {
+                        cmd.CommandText += " Order By DateAdded";
                     }
 
                     cmd.Parameters.Add(new SqlParameter("@Title", "%" + Title + "%"));
-                    cmd.Parameters.Add(new SqlParameter("@Description", "%" + Description + "%"));
-
+                    cmd.Parameters.Add(new SqlParameter("@description", "%" + description + "%"));
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
                     while (reader.Read())
