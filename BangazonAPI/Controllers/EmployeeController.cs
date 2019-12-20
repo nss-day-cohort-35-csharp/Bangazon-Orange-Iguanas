@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 //using System.Linq;
 using System.Threading.Tasks;
 using BangazonAPI.Models;
+using Microsoft.AspNetCore.Http;
 //using Microsoft.AspNetCore.Http;
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -164,6 +165,69 @@ namespace BangazonAPI.Controllers
                     return CreatedAtRoute("GetEmployee", new { id = newId }, employee);
                 }
             }
-        }  
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateEmployee([FromRoute] int id, [FromBody] Employee employee)
+        {
+            try
+            {
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"UPDATE Employee 
+                                        SET FirstName = @firstName, LastName = @lastName, 
+                                        DepartmentId = @departmentId, ComputerId = @computerID, 
+                                        Email = @email, IsSupervisor = @isSupervisor 
+                                        WHERE Id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+                        cmd.Parameters.Add(new SqlParameter("@firstName", employee.FirstName));
+                        cmd.Parameters.Add(new SqlParameter("@lastName", employee.LastName));
+                        cmd.Parameters.Add(new SqlParameter("@departmentId", employee.DepartmentId));
+                        cmd.Parameters.Add(new SqlParameter("@computerId", employee.ComputerId));
+                        cmd.Parameters.Add(new SqlParameter("@issupervisor", employee.IsSupervisor));
+                        cmd.Parameters.Add(new SqlParameter("@email", employee.Email));
+
+                        int rowsAffected = await cmd.ExecuteNonQueryAsync();
+                        if (rowsAffected > 0)
+                        {
+                            return new StatusCodeResult(StatusCodes.Status204NoContent);
+                        }
+                        throw new Exception("No rows affected");
+                    }
+                }
+            }
+            catch(Exception)
+            {
+                if(!EmployeeExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        private bool EmployeeExists(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT Id, DepartmentId, IsSupervisor, ComputerId, Email FROM Employee WHERE id = Id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    return reader.Read();
+                }
+            }
+        }
     }
 }
