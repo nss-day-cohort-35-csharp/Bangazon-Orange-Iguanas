@@ -33,7 +33,7 @@ namespace BangazonAPI.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] string Title)
+        public async Task<IActionResult> Get([FromQuery] string Title, [FromQuery] string Description)
         {
             using (SqlConnection conn = Connection)
             {
@@ -44,17 +44,20 @@ namespace BangazonAPI.Controllers
                     {
                         cmd.CommandText = @"SELECT Id, DateAdded, ProductTypeId, 
                                         CustomerId, Price, Title, Description 
-                                        FROM Product";
+                                        FROM Product
+                                        WHERE 1 = 1";
                          
 
                     }
 
-                    if (!string.IsNullOrWhiteSpace(Title))
+                    if (!string.IsNullOrWhiteSpace(Title) || !string.IsNullOrWhiteSpace(Description))
                     {
-                        cmd.CommandText += @"WHERE Title LIKE @q";
+                        cmd.CommandText += @" AND Title LIKE @Title";
+                        cmd.CommandText += @" AND Description LIKE @Description";
                     }
 
-                    cmd.Parameters.Add(new SqlParameter("@q", "%" + Title + "%"));
+                    cmd.Parameters.Add(new SqlParameter("@Title", "%" + Title + "%"));
+                    cmd.Parameters.Add(new SqlParameter("@Description", "%" + Description + "%"));
 
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
