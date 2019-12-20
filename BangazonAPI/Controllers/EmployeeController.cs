@@ -4,12 +4,12 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+//using System;
+//using System.Collections.Generic;
+//using System.Linq;
 using System.Threading.Tasks;
 using BangazonAPI.Models;
-using Microsoft.AspNetCore.Http;
+//using Microsoft.AspNetCore.Http;
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace BangazonAPI.Controllers
@@ -32,45 +32,52 @@ namespace BangazonAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllEmployees()
+        public async Task<List<Employee>> GetAllEmployees(
+            string firstName,
+            string lastName)
         {
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
-
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT Id, FirstName, LastName, DepartmentId, IsSupervisor, ComputerId, Email FROM Employee";
+                    cmd.CommandText = @"
+                        SELECT Id, FirstName, LastName, DepartmentId, IsSupervisor, ComputerId, Email
+                        FROM Employee
+                        WHERE 1=1";
+
+                    if (!string.IsNullOrWhiteSpace(firstName) || !string.IsNullOrWhiteSpace(lastName))
+                    {
+                        cmd.CommandText += " AND FirstName LIKE @firstName";
+                        cmd.Parameters.Add(new SqlParameter("@firstName", "%" + firstName + "%"));
+                        cmd.CommandText += " AND LastName LIKE @lastName";
+                        cmd.Parameters.Add(new SqlParameter("@lastName", "%" + lastName + "%"));
+                    }
 
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
-                    List<Employee> allEmployees = new List<Employee>();
+
+                    var employees = new List<Employee>();
 
                     while (reader.Read())
                     {
-                        var employeeId = reader.GetInt32(reader.GetOrdinal("Id"));
-                        var employeeAlreadyAdded = allEmployees.FirstOrDefault(e => e.Id == employeeId);
-
-                        if (employeeAlreadyAdded == null)
+                        employees.Add(new Employee
                         {
-                            Employee employee = new Employee()
-                            {
-                                Id = employeeId,
-                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                                DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
-                                IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
-                                ComputerId = reader.GetInt32(reader.GetOrdinal("ComputerId")),
-                                Email = reader.GetString(reader.GetOrdinal("Email"))
-                            };
-
-                            allEmployees.Add(employee);
-                        }
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
+                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                            ComputerId = reader.GetInt32(reader.GetOrdinal("ComputerId")),
+                            Email = reader.GetString(reader.GetOrdinal("Email"))
+                        });
                     }
+
                     reader.Close();
-                    return Ok(allEmployees);
+                    return employees;
                 }
             }
         }
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> Get([FromRoute] int id)
@@ -132,11 +139,8 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        [HttpGet]
-        [HttpGet()]
-        public async Task<IActionResult> GetEmployeeByName(
-            [FromQuery] string firstName,
-            [FromQuery] string lastName)
+        [HttpPost]
+        public async Task<IActionResult> Post([FromBody] Employee employee)
         {
 
             using (SqlConnection conn = Connection)
@@ -144,41 +148,22 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"
-                        SELECT Id, FirstName, LastName, SlackHandle, CohortId 
-                        FROM STUDENT ";
-
-                    if (!string.IsNullOrWhiteSpace(firstName) || !string.IsNullOrWhiteSpace(lastName))
-                    {
-                        cmd.CommandText += @"WHERE FirstName LIKE @firstName OR LastName LIKE @lastName";
-                    }
-
-                    cmd.Parameters.Add(new SqlParameter("@firstName", "%" + firstName + "%"));
-                    cmd.Parameters.Add(new SqlParameter("@lastName", "%" + lastName + "%"));
+                    cmd.CommandText = @"INSERT INTO Employee (FirstName, LastName, DepartmentId, IsSupervisor, ComputerId, Email)
+                                        OUTPUT INSERTED.Id
+                                        VALUES (@firstName, @lastName, @departmentId, @isSupervisor, @computerId, @email)";
+                    cmd.Parameters.Add(new SqlParameter("@firstName", employee.FirstName));
+                    cmd.Parameters.Add(new SqlParameter("@lastName", employee.LastName));
+                    cmd.Parameters.Add(new SqlParameter("@departmentId", employee.DepartmentId));
+                    cmd.Parameters.Add(new SqlParameter("@computerId", employee.ComputerId));
+                    cmd.Parameters.Add(new SqlParameter("@isSupervisor", employee.IsSupervisor));
+                    cmd.Parameters.Add(new SqlParameter("@email", employee.Email));
 
 
-                    SqlDataReader reader = await cmd.ExecuteReaderAsync();
-
-                    var employees = new List<Employee>();
-
-                    while (reader.Read())
-                    {
-                        employees.Add(new Employee
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
-                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
-                            ComputerId = reader.GetInt32(reader.GetOrdinal("ComputerId")),
-                            Email = reader.GetString(reader.GetOrdinal("Email"))
-                        });
-                    }
-
-                    reader.Close();
-                    return Ok(employees);
+                    var newId = (int)await cmd.ExecuteScalarAsync();
+                    employee.Id = newId;
+                    return CreatedAtRoute("GetEmployee", new { id = newId }, employee);
                 }
             }
-        }
+        }  
     }
 }
