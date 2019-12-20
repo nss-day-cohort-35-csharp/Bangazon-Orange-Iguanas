@@ -49,6 +49,7 @@ namespace BangazonAPI.Controllers
                     while (reader.Read())
                     {
                         var dateIsNull = reader.IsDBNull(reader.GetOrdinal("DecomissionDate"));
+
                         Computer computer = new Computer
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
