@@ -11,10 +11,14 @@ namespace BangazonAPI.Models
         public DateTime  DateAdded { get; set; }
         public int ProductTypeId { get; set; }
         public int CustomerId { get; set; }
-        public double  Price { get; set; }
+        public decimal Price { get; set; }
         public string Title { get; set; }
         public string  Description { get; set; }
-        public int Quantity { get; set; }
+       
 
+        internal void Add(object product)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
