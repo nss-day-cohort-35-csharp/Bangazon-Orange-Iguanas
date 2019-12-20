@@ -29,12 +29,14 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        //Get all computers
+        
+
+        //Get available computers
 
         [HttpGet]
-        public async Task<IActionResult> GetAllComputers()
+        public async Task<IActionResult> GetAvailableComputers([FromQuery] bool? available)
         {
-            string sqlStatement = "SELECT Id, PurchaseDate, DecomissionDate, Make, Model FROM Computer";
+            
 
 
             using (SqlConnection conn = Connection)
@@ -42,14 +44,26 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = sqlStatement;
+                    cmd.CommandText = @"SELECT c.Id, c.PurchaseDate, c.DecomissionDate, c.Make, c.Model FROM Computer c";
+
+                    if (available == true)
+                    {
+                        cmd.CommandText += @" LEFT JOIN Employee e ON e.ComputerId = c.Id 
+                                            WHERE e.Id IS NULL AND c.DecomissionDate IS NULL";
+                    }
+
+                    if (available == false)
+                    {
+                        cmd.CommandText += @" LEFT JOIN Employee e ON e.ComputerId = c.Id 
+                                            WHERE e.Id IS NOT NULL OR c.DecomissionDate IS NOT NULL"; 
+                    }
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
                     List<Computer> computers = new List<Computer>();
 
                     while (reader.Read())
                     {
-                        var dateIsNull = reader.IsDBNull(reader.GetOrdinal("DecomissionDate"));
 
+                        var dateIsNull = reader.IsDBNull(reader.GetOrdinal("DecomissionDate"));
                         Computer computer = new Computer
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
@@ -63,6 +77,8 @@ namespace BangazonAPI.Controllers
                             computer.DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate"));
                         }
 
+
+
                         computers.Add(computer);
                     }
                     reader.Close();
@@ -71,6 +87,8 @@ namespace BangazonAPI.Controllers
                 }
             }
         }
+
+
         ///Get computers by Id
 
         [HttpGet("{id}", Name = "GetComputers")]
