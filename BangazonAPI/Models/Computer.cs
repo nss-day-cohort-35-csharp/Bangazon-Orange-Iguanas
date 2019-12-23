@@ -13,7 +13,7 @@ namespace BangazonAPI.Models
 
         public string Model { get; set; }
 
-        public DateTime PurchaseDate { get; set; }
+        public DateTime? PurchaseDate { get; set; }
 
         public DateTime? DecomissionDate { get; set; }
     }
