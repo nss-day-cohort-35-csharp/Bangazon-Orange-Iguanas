@@ -188,9 +188,7 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"UPDATE Product
-                                            SET DateAdded = @DateAdded, SET ProductTypeId = @ProductTypeId, 
-                                            SET CustomerId = @CustomerId, SET Price = @Price,
-                                            SET Title = @Title, SET Description = @Description 
+                                            SET DateAdded = @DateAdded, ProductTypeId = @ProductTypeId, Title = @Title,CustomerId = @CustomerId, Price = @Price,Description = @Description 
                                             WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@DateAdded", product.DateAdded));
                         cmd.Parameters.Add(new SqlParameter("@ProductTypeId", product.ProductTypeId));
@@ -234,7 +232,8 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"DELETE FROM Product WHERE Id = @id";
+                        cmd.CommandText = @"DELETE FROM Product 
+                                            WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         int rowsAffected = await cmd.ExecuteNonQueryAsync();
