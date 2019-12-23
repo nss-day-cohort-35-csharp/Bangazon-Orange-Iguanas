@@ -75,6 +75,20 @@ namespace BangazonAPI.Controllers
                     cmd.Parameters.Add(new SqlParameter("@description", "%" + description + "%"));
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
+                    //sort by popularity
+
+                    List<Product> productsByPopularity = new List<Product>();
+                    {
+                        cmd.CommandText = @"SELECT Title,Id, COUNT(ProductTypeId) as ProductCount 
+                                            FROM Product
+                                            GROUP BY Title,Id;";
+                    }
+
+                    if (orderBy == "popularity")
+                    {
+                        cmd.CommandText += " Order By ProductTypeId";
+                    }
+
                     while (reader.Read())
                     {
                         Product product = new Product
