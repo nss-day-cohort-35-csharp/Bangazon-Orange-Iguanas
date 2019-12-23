@@ -16,5 +16,9 @@ namespace BangazonAPI.Models
         public string  Description { get; set; }
    
 
+        internal void Add(object product)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
