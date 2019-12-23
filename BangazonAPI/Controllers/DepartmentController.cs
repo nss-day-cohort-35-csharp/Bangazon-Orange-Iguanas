@@ -98,5 +98,28 @@ namespace BangazonAPI.Controllers
             }
         }
 
+        //add a department 
+
+        [HttpPost]
+        public async Task<IActionResult> Post([FromBody] Department department)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"INSERT INTO Department (Name, Budget)
+                                        OUTPUT INSERTED.Id
+                                        VALUES (@name, @budget)";
+                    cmd.Parameters.Add(new SqlParameter("@name", department.Name));
+                    cmd.Parameters.Add(new SqlParameter("@budget", department.Budget));
+
+                    int newId = (int)cmd.ExecuteScalar();
+                    department.Id = newId;
+                    return CreatedAtRoute("GetDepartments", new { id = newId }, department);
+                }
+            }
+        }
+
     }
 }
