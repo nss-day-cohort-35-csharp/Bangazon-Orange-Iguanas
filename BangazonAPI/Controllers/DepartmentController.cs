@@ -1,12 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using BangazonAPI.Models;
-using System.Collections.Generic;
-using Microsoft.Data.SqlClient;
-using System.Threading.Tasks;
-using System.Linq;
+﻿using BangazonAPI.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace BangazonAPI.Controllers
 {
@@ -39,7 +38,17 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @" SELECT d.Id, d.[Name], d.Budget,  e.FirstName, e.LastName, e.DepartmentId, e.Email, e.IsSupervisor, e.ComputerId, e.Id as EmployeeId
+                    cmd.CommandText = @" SELECT 
+                                        d.Id, 
+                                        d.[Name], 
+                                        d.Budget,  
+                                        e.FirstName, 
+                                        e.LastName, 
+                                        e.DepartmentId, 
+                                        e.Email, 
+                                        e.IsSupervisor, 
+                                        e.ComputerId,
+                                        e.Id as EmployeeId
                                         FROM Department d
                                         LEFT JOIN Employee e ON d.Id = e.DepartmentId";
                     SqlDataReader reader = cmd.ExecuteReader();
@@ -83,7 +92,7 @@ namespace BangazonAPI.Controllers
 
         //get departments by ID
 
-        [HttpGet("{id}", Name = "GetDepartment")]
+        [HttpGet("{id}", Name = "GetDepartmentandEmployee")]
         public async Task<IActionResult> Get(int id, string include)
         {
             using (SqlConnection conn = Connection)
@@ -100,6 +109,7 @@ namespace BangazonAPI.Controllers
                                                 e.FirstName,
                                                 e.LastName, 
                                                 e.Email,
+                                                e.ComputerId,
                                                 e.IsSupervisor, 
                                                 e.Id AS EmployeeId
                                                 FROM Department d 
@@ -138,6 +148,7 @@ namespace BangazonAPI.Controllers
                                 Id = reader.GetInt32(reader.GetOrdinal("EmployeeId")),
                                 FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
                                 LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                ComputerId = reader.GetInt32(reader.GetOrdinal("ComputerId")),
                                 Email = reader.GetString(reader.GetOrdinal("Email")),
                                 DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
                                 IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor"))
@@ -147,6 +158,7 @@ namespace BangazonAPI.Controllers
                             departments.Add(department);
 
                         }
+                        
                   
 
                     }
@@ -157,6 +169,8 @@ namespace BangazonAPI.Controllers
                 }
             }
         }
+
+       
 
         //add a department 
 
