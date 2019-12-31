@@ -158,8 +158,17 @@ namespace BangazonAPI.Controllers
                             departments.Add(department);
 
                         }
-                        
-                  
+                        if (reader.Read())
+                        {
+                            department = new Department
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
+                                Name = reader.GetString(reader.GetOrdinal("DepartmentName")),
+                                Budget = reader.GetInt32(reader.GetOrdinal("Budget"))
+                            };
+                        }
+                        return Ok(department);
+
 
                     }
 
@@ -170,7 +179,7 @@ namespace BangazonAPI.Controllers
             }
         }
 
-       
+
 
         //add a department 
 
