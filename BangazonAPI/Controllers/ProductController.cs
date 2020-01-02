@@ -159,18 +159,26 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT Id, DateAdded, ProductTypeId, 
-                                        CustomerId, Price, Title, Description 
-                                        FROM Product";
-                    cmd.Parameters.Add(new SqlParameter("@DateAdded", product.DateAdded));
+                    cmd.CommandText = @"INSERT INTO Product (ProductTypeId, DateAdded,
+                                        CustomerId, Price, Title, Description) 
+                                        OUTPUT INSERTED.Id
+                                        VALUES  (@ProductTypeId, 
+                                        @CustomerId, @Price, @Title, @Description, @DateAdded) ";
+
+                  
                     cmd.Parameters.Add(new SqlParameter("@ProductTypeId", product.ProductTypeId));
                     cmd.Parameters.Add(new SqlParameter("@CustomerId", product.CustomerId));
                     cmd.Parameters.Add(new SqlParameter("@Price", product.Price));
                     cmd.Parameters.Add(new SqlParameter("@Title", product.Title));
                     cmd.Parameters.Add(new SqlParameter("@Description", product.Description));
+                    cmd.Parameters.Add(new SqlParameter("@DateAdded", DateTime.Now));
+
 
 
                     int newId = (int)await cmd.ExecuteScalarAsync();
+                   // DateTime now = DateTime.Now;
+                    //string asString = now.ToString("dd MMMM yyyy hh:mm:ss tt");
+                    //product.DateAdded = asString;
                     product.Id = newId;
                     return CreatedAtRoute("GetProduct", new { id = newId }, product);
                 }
@@ -197,7 +205,7 @@ namespace BangazonAPI.Controllers
                         cmd.Parameters.Add(new SqlParameter("@Title", product.Title));
                         cmd.Parameters.Add(new SqlParameter("@Description", product.Description));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
-
+               
                         int rowsAffected = await cmd.ExecuteNonQueryAsync();
                         if (rowsAffected > 0)
                         {
