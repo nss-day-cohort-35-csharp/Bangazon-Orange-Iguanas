@@ -13,12 +13,12 @@ namespace BangazonAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductController : ControllerBase
+    public class ProductsController : ControllerBase
     {
 
         private readonly IConfiguration _config;
 
-        public ProductController(IConfiguration config)
+        public ProductsController(IConfiguration config)
         {
             _config = config;
         }
@@ -159,11 +159,15 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO Product (ProductTypeId,
-                                        CustomerId, Price, Title, [Description], DateAdded) 
+                    cmd.CommandText = @"INSERT INTO Product (ProductTypeId
+                                                            ,CustomerId
+                                                            ,Price
+                                                            ,Title
+                                                            ,[Description]
+                                                            ,DateAdded) 
                                         OUTPUT INSERTED.Id
                                         VALUES  (@ProductTypeId, 
-                                        @CustomerId, @Price, @Title, @Description,@DateAdded)";
+                                        @CustomerId, @Price, @Title, @Description,SYSDATETIME())";
 
                   
                     cmd.Parameters.Add(new SqlParameter("@ProductTypeId", product.ProductTypeId));
@@ -171,7 +175,7 @@ namespace BangazonAPI.Controllers
                     cmd.Parameters.Add(new SqlParameter("@Price", product.Price));
                     cmd.Parameters.Add(new SqlParameter("@Title", product.Title));
                     cmd.Parameters.Add(new SqlParameter("@Description", product.Description));
-                    cmd.Parameters.Add(new SqlParameter("@DateAdded", DateTime.Now));
+                    //cmd.Parameters.Add(new SqlParameter("@DateAdded", DateTime.Now));
 
 
 
