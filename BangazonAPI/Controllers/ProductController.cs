@@ -46,7 +46,7 @@ namespace BangazonAPI.Controllers
                     List<Product> products = new List<Product>();
                     {
                         cmd.CommandText = @"SELECT Id, DateAdded, ProductTypeId, 
-                                        CustomerId, Price, Title, Description 
+                                        CustomerId, Price, Title, [Description] 
                                         FROM Product
                                         WHERE 1 = 1";
                          
@@ -123,7 +123,7 @@ namespace BangazonAPI.Controllers
                     cmd.CommandText =
                         @"SELECT
                         Id,DateAdded, ProductTypeId, 
-                        CustomerId, Price, Title, Description 
+                        CustomerId, Price, Title, [Description] 
                         FROM Product
                         WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
@@ -159,11 +159,11 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO Product (ProductTypeId, DateAdded,
-                                        CustomerId, Price, Title, Description) 
+                    cmd.CommandText = @"INSERT INTO Product (ProductTypeId,
+                                        CustomerId, Price, Title, [Description], DateAdded) 
                                         OUTPUT INSERTED.Id
                                         VALUES  (@ProductTypeId, 
-                                        @CustomerId, @Price, @Title, @Description, @DateAdded) ";
+                                        @CustomerId, @Price, @Title, @Description,@DateAdded)";
 
                   
                     cmd.Parameters.Add(new SqlParameter("@ProductTypeId", product.ProductTypeId));
