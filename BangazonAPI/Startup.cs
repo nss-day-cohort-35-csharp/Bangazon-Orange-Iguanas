@@ -31,7 +31,7 @@ namespace BangazonAPI
                 options.AddPolicy(MyAllowSpecificOrigins,
                 builder =>
                 {
-                    builder.WithOrigins("http://www.bangazon.com");
+                    builder.WithOrigins("http://www.bangazon.com", "http://bangazon.com");
                 });
             });
 
@@ -59,7 +59,7 @@ namespace BangazonAPI
 
             app.UseCors(MyAllowSpecificOrigins);
 
-            app.UseAuthorization();
+          
 
             app.UseEndpoints(endpoints =>
             {
