@@ -1,12 +1,15 @@
 ﻿SELECT * FROM [Order];
 
+SELECT * FROM OrderProduct;
+/*
 SELECT * FROM PaymentType;
 
 select * from Customer;
 
 SELECT * FROM Product;
+*/
 
-SELECT * FROM OrderProduct;
+
 
 SELECT p.Id AS ProductId, p.DateAdded, p.ProductTypeId, p.CustomerId as SellerId, p.Price, p.Title, p.Description, +
 o.CustomerId, o.Id as OrderId, o.UserPaymentTypeId, +
