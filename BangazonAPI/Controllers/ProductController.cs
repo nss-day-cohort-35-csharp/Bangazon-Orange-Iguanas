@@ -34,9 +34,10 @@ namespace BangazonAPI.Controllers
 
         [HttpGet]
         public async Task<IActionResult> Get(
-            [FromQuery] string orderBy,
+            [FromQuery] string sortBy,
             [FromQuery] string Title,
-            [FromQuery] string description)
+            [FromQuery] string description,
+            [FromQuery] bool asc)
         {
             using (SqlConnection conn = Connection)
             {
@@ -66,29 +67,44 @@ namespace BangazonAPI.Controllers
                         cmd.CommandText += @" AND Description LIKE @description";
 
                     }
-                    if (orderBy == "recent")
+                    if (sortBy == "recent")
                     {
                         cmd.CommandText += " Order By DateAdded";
+                    }
+
+
+                    //sort by popularity
+
+                    //List<Product> productsByPopularity = new List<Product>();
+                    //{
+                    //    cmd.CommandText = @"SELECT Title,Id, COUNT(ProductTypeId) AS ProductCount 
+                    //                        FROM Product
+                    //                        GROUP BY Title,Id;";
+                    //}
+
+                    if (sortBy == "popularity")
+                    {
+                        cmd.CommandText += " Order By ProductTypeId";
+                    }
+
+                    if (sortBy == "price")
+                    {
+                        if (asc)
+                        {
+                            cmd.CommandText += " Order By Price ASC";
+
+                        }
+                        else
+                        {
+                            cmd.CommandText += " Order By Price DESC";
+                        }
+                       
                     }
 
                     cmd.Parameters.Add(new SqlParameter("@Title", "%" + Title + "%"));
                     cmd.Parameters.Add(new SqlParameter("@description", "%" + description + "%"));
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
-
-                    //sort by popularity
-
-                    List<Product> productsByPopularity = new List<Product>();
-                    {
-                        cmd.CommandText = @"SELECT Title,Id, COUNT(ProductTypeId) as ProductCount 
-                                            FROM Product
-                                            GROUP BY Title,Id;";
-                    }
-
-                    if (orderBy == "popularity")
-                    {
-                        cmd.CommandText += " Order By ProductTypeId";
-                    }
-
+                    
                     while (reader.Read())
                     {
                         Product product = new Product
