@@ -166,7 +166,7 @@ namespace BangazonAPI.Controllers
                     var newId = (int)await cmd.ExecuteScalarAsync();
                     employee.Id = newId;
                     return CreatedAtRoute("GetEmployee", new { id = newId }, employee);
-                }
+                } 
             }
         }
 
