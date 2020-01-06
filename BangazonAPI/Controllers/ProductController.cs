@@ -13,12 +13,12 @@ namespace BangazonAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductController : ControllerBase
+    public class ProductsController : ControllerBase
     {
 
         private readonly IConfiguration _config;
 
-        public ProductController(IConfiguration config)
+        public ProductsController(IConfiguration config)
         {
             _config = config;
         }
@@ -34,9 +34,10 @@ namespace BangazonAPI.Controllers
 
         [HttpGet]
         public async Task<IActionResult> Get(
-            [FromQuery] string orderBy,
+            [FromQuery] string sortBy,
             [FromQuery] string Title,
-            [FromQuery] string description)
+            [FromQuery] string description,
+            [FromQuery] bool asc)
         {
             using (SqlConnection conn = Connection)
             {
@@ -46,7 +47,7 @@ namespace BangazonAPI.Controllers
                     List<Product> products = new List<Product>();
                     {
                         cmd.CommandText = @"SELECT Id, DateAdded, ProductTypeId, 
-                                        CustomerId, Price, Title, Description 
+                                        CustomerId, Price, Title, [Description] 
                                         FROM Product
                                         WHERE 1 = 1";
                          
@@ -66,29 +67,44 @@ namespace BangazonAPI.Controllers
                         cmd.CommandText += @" AND Description LIKE @description";
 
                     }
-                    if (orderBy == "recent")
+                    if (sortBy == "recent")
                     {
                         cmd.CommandText += " Order By DateAdded";
+                    }
+
+
+                    //sort by popularity
+
+                    //List<Product> productsByPopularity = new List<Product>();
+                    //{
+                    //    cmd.CommandText = @"SELECT Title,Id, COUNT(ProductTypeId) AS ProductCount 
+                    //                        FROM Product
+                    //                        GROUP BY Title,Id;";
+                    //}
+
+                    if (sortBy == "popularity")
+                    {
+                        cmd.CommandText += " Order By ProductTypeId";
+                    }
+
+                    if (sortBy == "price")
+                    {
+                        if (asc)
+                        {
+                            cmd.CommandText += " Order By Price ASC";
+
+                        }
+                        else
+                        {
+                            cmd.CommandText += " Order By Price DESC";
+                        }
+                       
                     }
 
                     cmd.Parameters.Add(new SqlParameter("@Title", "%" + Title + "%"));
                     cmd.Parameters.Add(new SqlParameter("@description", "%" + description + "%"));
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
-
-                    //sort by popularity
-
-                    List<Product> productsByPopularity = new List<Product>();
-                    {
-                        cmd.CommandText = @"SELECT Title,Id, COUNT(ProductTypeId) as ProductCount 
-                                            FROM Product
-                                            GROUP BY Title,Id;";
-                    }
-
-                    if (orderBy == "popularity")
-                    {
-                        cmd.CommandText += " Order By ProductTypeId";
-                    }
-
+                    
                     while (reader.Read())
                     {
                         Product product = new Product
@@ -123,7 +139,7 @@ namespace BangazonAPI.Controllers
                     cmd.CommandText =
                         @"SELECT
                         Id,DateAdded, ProductTypeId, 
-                        CustomerId, Price, Title, Description 
+                        CustomerId, Price, Title, [Description] 
                         FROM Product
                         WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
@@ -159,18 +175,30 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT Id, DateAdded, ProductTypeId, 
-                                        CustomerId, Price, Title, Description 
-                                        FROM Product";
-                    cmd.Parameters.Add(new SqlParameter("@DateAdded", product.DateAdded));
+                    cmd.CommandText = @"INSERT INTO Product (ProductTypeId
+                                                            ,CustomerId
+                                                            ,Price
+                                                            ,Title
+                                                            ,[Description]
+                                                            ,DateAdded) 
+                                        OUTPUT INSERTED.Id
+                                        VALUES  (@ProductTypeId, 
+                                        @CustomerId, @Price, @Title, @Description,SYSDATETIME())";
+
+                  
                     cmd.Parameters.Add(new SqlParameter("@ProductTypeId", product.ProductTypeId));
                     cmd.Parameters.Add(new SqlParameter("@CustomerId", product.CustomerId));
                     cmd.Parameters.Add(new SqlParameter("@Price", product.Price));
                     cmd.Parameters.Add(new SqlParameter("@Title", product.Title));
                     cmd.Parameters.Add(new SqlParameter("@Description", product.Description));
+                    //cmd.Parameters.Add(new SqlParameter("@DateAdded", DateTime.Now));
+
 
 
                     int newId = (int)await cmd.ExecuteScalarAsync();
+                   // DateTime now = DateTime.Now;
+                    //string asString = now.ToString("dd MMMM yyyy hh:mm:ss tt");
+                    //product.DateAdded = asString;
                     product.Id = newId;
                     return CreatedAtRoute("GetProduct", new { id = newId }, product);
                 }
@@ -188,9 +216,7 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"UPDATE Product
-                                            SET DateAdded = @DateAdded, SET ProductTypeId = @ProductTypeId, 
-                                            SET CustomerId = @CustomerId, SET Price = @Price,
-                                            SET Title = @Title, SET Description = @Description 
+                                            SET DateAdded = @DateAdded, ProductTypeId = @ProductTypeId, Title = @Title,CustomerId = @CustomerId, Price = @Price,Description = @Description 
                                             WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@DateAdded", product.DateAdded));
                         cmd.Parameters.Add(new SqlParameter("@ProductTypeId", product.ProductTypeId));
@@ -199,7 +225,7 @@ namespace BangazonAPI.Controllers
                         cmd.Parameters.Add(new SqlParameter("@Title", product.Title));
                         cmd.Parameters.Add(new SqlParameter("@Description", product.Description));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
-
+               
                         int rowsAffected = await cmd.ExecuteNonQueryAsync();
                         if (rowsAffected > 0)
                         {
@@ -234,7 +260,8 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"DELETE FROM Product WHERE Id = @id";
+                        cmd.CommandText = @"DELETE FROM Product 
+                                            WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         int rowsAffected = await cmd.ExecuteNonQueryAsync();

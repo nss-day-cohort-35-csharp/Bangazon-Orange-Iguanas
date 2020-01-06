@@ -174,7 +174,7 @@ namespace BangazonAPI.Controllers
                         cmd.CommandText = @"UPDATE Computer
                                             SET PurchaseDate = @purchaseDate,
                                                 DecomissionDate = @decomissionDate,
-                                                Make = @make
+                                                Make = @make,
                                                 Model = @model
                                             WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@purchaseDate", computer.PurchaseDate));
