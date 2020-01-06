@@ -265,7 +265,8 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        [HttpPost]
+        
+        [HttpPost("post")]
         public async Task<IActionResult> Post([FromBody] Order order)
         {
             using (SqlConnection conn = Connection)
@@ -273,9 +274,9 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO [Order] (CustomerId, UserPaymentTypeId, ProductId)
+                    cmd.CommandText = @"INSERT INTO [Order] (CustomerId, UserPaymentTypeId)
                                         OUTPUT INSERTED.Id
-                                        VALUES (@Customer, @ProductId";
+                                        VALUES (@Customer";
                     if (order.UserPaymentTypeId == 0)
                     {
                         cmd.CommandText += ", NULL)";
@@ -287,13 +288,14 @@ namespace BangazonAPI.Controllers
                         
                     }
                     cmd.Parameters.Add(new SqlParameter("@Customer", order.CustomerId));
-                    cmd.Parameters.Add(new SqlParameter("@ProductId", order.Products));
                     int newId = (int)await cmd.ExecuteScalarAsync();
                     order.Id = newId;
                     return CreatedAtRoute("GetOrder", new { id = newId }, order);
                 }
             }
         }
+
+    
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Put([FromRoute] int id, [FromBody] Order updateOrder)
@@ -368,6 +370,101 @@ namespace BangazonAPI.Controllers
                 else
                 {
                     throw;
+                }
+            }
+        }
+
+        [HttpPost("addProductToOrder")]
+        public async Task<IActionResult> AddProductToOrder([FromBody] CustomerProduct customerProduct)
+        {
+            int orderId = GetCustomerId(customerProduct.CustomerId);
+            if (orderId > 0)
+            {
+                await PostOrderProduct(orderId, customerProduct.ProductId);
+                return Ok();
+            }
+            else
+            {
+                await PostOrder(customerProduct.CustomerId);
+                int newOrderId = GetCustomerId(customerProduct.CustomerId);
+                await PostOrderProduct(newOrderId, customerProduct.ProductId);
+                return Ok();
+            }
+        }
+
+        private int GetCustomerId(int customerId)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT Id FROM [Order] WHERE CustomerId = @id AND UserPaymentTypeId = 0";
+                    cmd.Parameters.Add(new SqlParameter("@id", customerId));
+
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    int orderId = -1;
+
+                    if (reader.Read())
+                    {
+                        orderId = reader.GetInt32(reader.GetOrdinal("Id"));
+                        return orderId;
+                    }
+                    reader.Close();
+                    return orderId;
+                }
+            }
+        }
+
+        private async Task<IActionResult> PostOrder(int customerId)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    Order newOrder = new Order()
+                    {
+                        CustomerId = customerId,
+                        UserPaymentTypeId = 0,
+                    
+                    };
+
+                    cmd.CommandText = @"INSERT INTO [Order] (CustomerId, UserPaymentTypeId)
+                                        OUTPUT INSERTED.Id
+                                        VALUES (@customerId, @UserPaymentTypeId)";
+                    cmd.Parameters.Add(new SqlParameter("@customerId", newOrder.CustomerId));
+                    cmd.Parameters.Add(new SqlParameter("@UserPaymentTypeId", newOrder.UserPaymentTypeId));
+
+                    newOrder.Id = (int)await cmd.ExecuteScalarAsync();
+
+                    return CreatedAtRoute("GetOrderProduct", new { id = newOrder.Id }, newOrder);
+                }
+            }
+        }
+        private async Task<IActionResult> PostOrderProduct(int orderId, int productId)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    OrderProduct newOrderProduct = new OrderProduct()
+                    {
+                        OrderId = orderId,
+                        ProductId = productId
+                    };
+
+                    cmd.CommandText = @"INSERT INTO OrderProduct (OrderId, ProductId)
+                                        OUTPUT INSERTED.Id
+                                        VALUES (@orderId, @productId)";
+                    cmd.Parameters.Add(new SqlParameter("@orderId", newOrderProduct.OrderId));
+                    cmd.Parameters.Add(new SqlParameter("@productId", newOrderProduct.ProductId));
+
+                    newOrderProduct.Id = (int)await cmd.ExecuteScalarAsync();
+
+                    return CreatedAtRoute("GetOrderProduct", new { id = newOrderProduct.Id }, newOrderProduct);
                 }
             }
         }
