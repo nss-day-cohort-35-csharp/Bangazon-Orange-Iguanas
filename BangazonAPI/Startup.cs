@@ -50,12 +50,14 @@ namespace BangazonAPI
                 app.UseHsts();
             }
 
-            app.UseCors(MyAllowSpecificOrigins);
+          
 
             app.UseHttpsRedirection();
 
 
             app.UseRouting();
+
+            app.UseCors(MyAllowSpecificOrigins);
 
             app.UseAuthorization();
 
