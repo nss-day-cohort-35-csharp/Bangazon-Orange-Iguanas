@@ -81,7 +81,7 @@ namespace BangazonAPI.Controllers
                                         FROM TrainingProgram t
                                         LEFT JOIN EmployeeTraining et ON t.Id = et.TrainingProgramId
                                         LEFT JOIN Employee e ON e.Id = et.EmployeeId
-                                        WHERE GetDate() < EndDate AND t.Id = @id";
+                                        WHERE t.Id = @id";
 
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
@@ -145,7 +145,7 @@ namespace BangazonAPI.Controllers
 
         [HttpPost("{id}")]
         [Route ("employee")]
-        public async Task<IActionResult> Post([FromRoute] int id [FromBody] EmployeeTraining trainingProgramEmployee)
+        public async Task<IActionResult> Post([FromRoute] int id, [FromBody] EmployeeTraining employeeTraining)
         {
 
             using (SqlConnection conn = Connection)
@@ -153,20 +153,15 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SET FirstName=@firstName, LastName=@lastName, IsSupervisor = @isSupervisor, ComputerId = @computerId, DepartmentId = @departmentId, Email = @email
+                    cmd.CommandText = @"INSERT INTO EmployeeTraining (EmployeeId, TraingingProgramId)
                                         OUTPUT INSERTED.Id
-                                        WHERE Id = @id";
-                    cmd.Parameters.Add(new SqlParameter("@id", trainingProgramEmployee.Id));
-                    cmd.Parameters.Add(new SqlParameter("@firstName", trainingProgramEmployee.FirstName));
-                    cmd.Parameters.Add(new SqlParameter("@lastName", trainingProgramEmployee.LastName));
-                    cmd.Parameters.Add(new SqlParameter("@isSupervisor", trainingProgramEmployee.IsSupervisor));
-                    cmd.Parameters.Add(new SqlParameter("@computerId", trainingProgramEmployee.ComputerId));
-                    cmd.Parameters.Add(new SqlParameter("@departmentId", trainingProgramEmployee.DepartmentId));
-                    cmd.Parameters.Add(new SqlParameter("@email", trainingProgramEmployee.Email));
+                                        VALUES (@employeeId, @trainingProgramId)";
+                    cmd.Parameters.Add(new SqlParameter("@employeeId", employeeTraining.EmployeeId));
+                    cmd.Parameters.Add(new SqlParameter("@trainingProgramId", id));
 
                     var newId = (int)await cmd.ExecuteScalarAsync();
-                    trainingProgramEmployee.Id = newId;
-                    return CreatedAtRoute("GetTrainingProgram", new { id = newId }, trainingProgramEmployee);
+                    employeeTraining.Id = newId;
+                    return CreatedAtRoute("GetTrainingProgram", new { id = newId }, employeeTraining);
                 }
             }
         }
