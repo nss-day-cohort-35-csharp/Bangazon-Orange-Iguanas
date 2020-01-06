@@ -132,7 +132,7 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        private async Task<List<Order>> GetOrdersWithoutCart(int? customerID)
+        private async Task<List<Order>> GetOrdersWithoutCart(int? customerId)
         {
             using (SqlConnection conn = Connection)
             {
@@ -143,10 +143,10 @@ namespace BangazonAPI.Controllers
                                         FROM [Order] 
                                         LEFT JOIN OrderProduct AS op ON [Order].Id = op.OrderId
                                         LEFT JOIN Product as p ON op.ProductId = p.Id";
-                    if (!String.IsNullOrWhiteSpace(customerID.ToString()))
+                    if (!String.IsNullOrWhiteSpace(customerId.ToString()))
                     {
                         cmd.CommandText += " WHERE [Order].CustomerId = @customerId";
-                        cmd.Parameters.Add(new SqlParameter("@customerId", customerID));
+                        cmd.Parameters.Add(new SqlParameter("@customerId", customerId));
                     }
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
                     List<Order> orders = new List<Order>();
@@ -273,9 +273,9 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO [Order] (CustomerId, UserPaymentTypeId)
+                    cmd.CommandText = @"INSERT INTO [Order] (CustomerId, UserPaymentTypeId, ProductId)
                                         OUTPUT INSERTED.Id
-                                        VALUES (@Customer ";
+                                        VALUES (@Customer, @ProductId";
                     if (order.UserPaymentTypeId == 0)
                     {
                         cmd.CommandText += ", NULL)";
@@ -284,8 +284,10 @@ namespace BangazonAPI.Controllers
                     {
                         cmd.CommandText += ", @UserPaymentType)";
                         cmd.Parameters.Add(new SqlParameter("@UserPaymentType", order.UserPaymentTypeId));
+                        
                     }
                     cmd.Parameters.Add(new SqlParameter("@Customer", order.CustomerId));
+                    cmd.Parameters.Add(new SqlParameter("@ProductId", order.Products));
                     int newId = (int)await cmd.ExecuteScalarAsync();
                     order.Id = newId;
                     return CreatedAtRoute("GetOrder", new { id = newId }, order);
@@ -331,7 +333,7 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        [HttpDelete("{id}/products{productid}")]
+        [HttpDelete("{id}/product{productid}")]
         public async Task<IActionResult> Delete([FromRoute] int id, int productId)
         {
             try
