@@ -96,8 +96,12 @@ namespace BangazonAPI.Controllers
                                 Id = reader.GetInt32(reader.GetOrdinal("Id")),
                                 Name = reader.GetString(reader.GetOrdinal("Name")),
                                 StartDate = reader.GetDateTime(reader.GetOrdinal("StartDate")),
-                                EndDate = reader.GetDateTime(reader.GetOrdinal("EndDate")), 
+                                EndDate = reader.GetDateTime(reader.GetOrdinal("EndDate")),
                             };
+                        }
+
+                        if (!reader.IsDBNull(reader.GetOrdinal("EmployeeId")))
+                        {
 
                             var employee = new Employee()
                             {
@@ -143,8 +147,7 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        [HttpPost("{id}")]
-        [Route ("employee")]
+        [HttpPost("{id}/employees")]
         public async Task<IActionResult> Post([FromRoute] int id, [FromBody] EmployeeTraining employeeTraining)
         {
 
@@ -153,19 +156,177 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO EmployeeTraining (EmployeeId, TraingingProgramId)
+                    bool exists = await EmployeeExist(employeeTraining.EmployeeId);
+                    if (exists)
+                    {
+
+                        cmd.CommandText = @"INSERT INTO EmployeeTraining (EmployeeId, TrainingProgramId)
                                         OUTPUT INSERTED.Id
                                         VALUES (@employeeId, @trainingProgramId)";
                     cmd.Parameters.Add(new SqlParameter("@employeeId", employeeTraining.EmployeeId));
                     cmd.Parameters.Add(new SqlParameter("@trainingProgramId", id));
 
                     var newId = (int)await cmd.ExecuteScalarAsync();
-                    employeeTraining.Id = newId;
-                    return CreatedAtRoute("GetTrainingProgram", new { id = newId }, employeeTraining);
+                        employeeTraining.Id = newId;
+                    return Ok(employeeTraining);
+                    }
+                    else
+                    {
+                        return BadRequest($"No Employee with Id of {employeeTraining.EmployeeId}");
+                    }
+                }
+            }
+        }
+
+        private async Task<bool> EmployeeExist(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                        SELECT Id, FirstName, LastName, DepartmentId, Email, IsSupervisor, ComputerId
+                        FROM Employee
+                        WHERE Id = @id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                    SqlDataReader reader = await cmd.ExecuteReaderAsync();
+                    return reader.Read();
                 }
             }
         }
 
 
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateTrainingProgram([FromRoute] int id, [FromBody] TrainingProgram trainingProgram)
+        {
+            try
+            {
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"UPDATE TrainingProgram
+                                        SET Name = @name, StartDate = @startDate, 
+                                        EndDate = @endDate, MaxAttendees = @maxAttendees
+                                        WHERE Id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+                        cmd.Parameters.Add(new SqlParameter("@name", trainingProgram.Name));
+                        cmd.Parameters.Add(new SqlParameter("@startDate", trainingProgram.StartDate));
+                        cmd.Parameters.Add(new SqlParameter("@endDate", trainingProgram.EndDate));
+                        cmd.Parameters.Add(new SqlParameter("@maxAttendees", trainingProgram.MaxAttendees));
+                        int rowsAffected = await cmd.ExecuteNonQueryAsync();
+                        if (rowsAffected > 0)
+                        {
+                            return new StatusCodeResult(StatusCodes.Status204NoContent);
+                        }
+                        throw new Exception("No rows affected");
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                if (!TrainingProgramExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
+        {
+            try
+            {
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"DELETE FROM TrainingProgram 
+                                            WHERE Id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                        int rowsAffected = await cmd.ExecuteNonQueryAsync();
+                        if (rowsAffected > 0)
+                        {
+                            return new StatusCodeResult(StatusCodes.Status204NoContent);
+                        }
+                        throw new Exception("No rows affected");
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                if (!TrainingProgramExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        [HttpDelete("{programId}/employees/{employeeId}")]
+        public async Task<IActionResult> Delete([FromRoute] int programId, [FromRoute] int employeeId)
+        {
+            try
+            {
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"DELETE FROM EmployeeTraining
+                                            WHERE EmployeeId = @employeeId AND TrainingProgramId = @programId";
+                        cmd.Parameters.Add(new SqlParameter("@programId", programId));
+                        cmd.Parameters.Add(new SqlParameter("@employeeId", employeeId));
+
+                        int rowsAffected = await cmd.ExecuteNonQueryAsync();
+                        if (rowsAffected > 0)
+                        {
+                            return new StatusCodeResult(StatusCodes.Status204NoContent);
+                        }
+                        throw new Exception("No rows affected");
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                if (!TrainingProgramExists(programId))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+        private bool TrainingProgramExists(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT Id, Name, StartDate, EndDate, MaxAttendees FROM TrainingProgram WHERE Id = @id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    return reader.Read();
+                }
+            }
+        }
     }
 }

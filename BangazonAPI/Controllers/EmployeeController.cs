@@ -31,7 +31,7 @@ namespace BangazonAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllEmployees(
             [FromQuery] string firstName,
-            [FromQuery] string lastName) 
+            [FromQuery] string lastName)
         {
             var employees = await getEmployees(firstName, lastName);
             return Ok(employees);
@@ -166,7 +166,7 @@ namespace BangazonAPI.Controllers
                     var newId = (int)await cmd.ExecuteScalarAsync();
                     employee.Id = newId;
                     return CreatedAtRoute("GetEmployee", new { id = newId }, employee);
-                } 
+                }
             }
         }
 
