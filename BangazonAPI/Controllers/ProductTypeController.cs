@@ -1,12 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using BangazonAPI.Models;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
-using BangazonAPI.Models;
-using Microsoft.AspNetCore.Http;
 
 namespace BangazonAPI.Controllers
 {
@@ -30,7 +30,18 @@ namespace BangazonAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get( int id)
+        {
+           
+            
+                var productTypes = await GetProductTypes();
+                return Ok(productTypes);
+            
+
+        }
+
+
+        private async Task<List<ProductType>> GetProductTypes()
         {
             using (SqlConnection conn = Connection)
             {
@@ -48,7 +59,7 @@ namespace BangazonAPI.Controllers
                         ProductType newProductType = productTypes.FirstOrDefault(p => p.Id == currentProductTypeID);
 
                         string nameValue = reader.GetString(reader.GetOrdinal("Name"));
-                      
+
 
                         if (newProductType == null)
                         {
@@ -66,14 +77,85 @@ namespace BangazonAPI.Controllers
                     }
                     reader.Close();
 
-                    return Ok(productTypes);
+                    return productTypes;
+                }
+            }
+        }
+
+
+        private async Task<ProductType> GetProductTypeWithProducts(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+
+
+                    cmd.CommandText += @"SELECT p.Id as ProductId, p.DateAdded, p.ProductTypeId, p.CustomerId, p.Price, p.Title, p.Description, pt.Name, pt.Id
+                                       FROM ProductType AS pt
+                                       LEFT JOIN Product p ON p.ProductTypeId = pt.Id
+                                       WHERE pt.Id = @id";
+
+
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    SqlDataReader reader = await cmd.ExecuteReaderAsync();
+
+                    ProductType productType = null;
+
+                    while (reader.Read())
+                    {
+                        
+                        var hasProduct = !reader.IsDBNull(reader.GetOrdinal("ProductId"));
+                        if (productType == null)
+                        {
+                            productType = new ProductType
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                Name = reader.GetString(reader.GetOrdinal("Name"))
+
+
+                            };
+
+                        }
+                        if (hasProduct)
+                        {
+                            var dateIsNull = reader.IsDBNull(reader.GetOrdinal("DateAdded"));
+                            Product product = new Product()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("ProductId")),
+                                ProductTypeId = reader.GetInt32(reader.GetOrdinal("ProductTypeId")),
+                                CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                                Price = reader.GetDecimal(reader.GetOrdinal("Price")),
+                                Title = reader.GetString(reader.GetOrdinal("Title")),
+                                Description = reader.GetString(reader.GetOrdinal("Description"))
+                            };
+                            if (!dateIsNull)
+                            {
+                                product.DateAdded = reader.GetDateTime(reader.GetOrdinal("DateAdded"));
+                            }
+
+                            productType.Products.Add(product);
+                        }
+                        
+
+
+                    }
+
+                    reader.Close();
+                    return productType;
                 }
             }
         }
 
         [HttpGet("{id}", Name = "GetProductType")]
-        public async Task<IActionResult> Get([FromRoute] int id)
+        public async Task<IActionResult> Get([FromRoute] int id, [FromQuery] string include)
         {
+            if (include == "products")
+            {
+                var productTypeWithProducts = await GetProductTypeWithProducts(id);
+                return Ok(productTypeWithProducts);
+            }
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
@@ -91,13 +173,13 @@ namespace BangazonAPI.Controllers
                     {
                         int idValue = reader.GetInt32(reader.GetOrdinal("Id"));
                         string name = reader.GetString(reader.GetOrdinal("Name"));
-                     
+
 
                         productType = new ProductType
                         {
                             Id = idValue,
                             Name = name,
-    
+
                         };
 
                     };
