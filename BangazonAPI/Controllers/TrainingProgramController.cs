@@ -143,8 +143,9 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        [HttpPost("{id}/employees")]
-        public async Task<IActionResult> Post([FromBody] Employee trainingProgramEmployee)
+        [HttpPost("{id}")]
+        [Route ("employee")]
+        public async Task<IActionResult> Post([FromRoute] int id [FromBody] EmployeeTraining trainingProgramEmployee)
         {
 
             using (SqlConnection conn = Connection)
@@ -169,5 +170,7 @@ namespace BangazonAPI.Controllers
                 }
             }
         }
+
+
     }
 }

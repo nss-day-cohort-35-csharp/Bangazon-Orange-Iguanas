@@ -181,7 +181,7 @@ namespace BangazonAPI.Controllers
 
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"UPDATE Employee 
+                        cmd.CommandText = @"UPDATE Employee
                                         SET FirstName = @firstName, LastName = @lastName, 
                                         DepartmentId = @departmentId, ComputerId = @computerID, 
                                         Email = @email, IsSupervisor = @isSupervisor 
