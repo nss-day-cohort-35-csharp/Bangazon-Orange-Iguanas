@@ -361,10 +361,97 @@ namespace BangazonAPI.Controllers
                     return CreatedAtRoute("GetCustomer", new { id = newcustomerId }, customer);
 
                 }
+
             }
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> EditCustomer([FromRoute] int id, [FromBody] Customer customer)
+        {
+            try
+            {
+
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"
+                                         UPDATE 
+                                         Customer 
+                                         Set FirstName = @FirstName,
+                                             LastName = @LastName,
+                                             Address = @Address,
+                                             City = @City, 
+                                             State = @State,
+                                             Email = @Email,
+                                              Phone = @Phone,
+                                              CreatedDate = @CreateDate, 
+                                              Active = @Active
+                                              WHERE Id = @Id";
+                        cmd.Parameters.Add(new SqlParameter("@FirstName", customer.FirstName));
+                        cmd.Parameters.Add(new SqlParameter("@LastName", customer.LastName));
+                        cmd.Parameters.Add(new SqlParameter("@Address", customer.Address));
+                        cmd.Parameters.Add(new SqlParameter("@City", customer.City));
+                        cmd.Parameters.Add(new SqlParameter("@State", customer.State));
+                        cmd.Parameters.Add(new SqlParameter("@Email", customer.Email));
+                        cmd.Parameters.Add(new SqlParameter("@Phone", customer.Phone));
+                        cmd.Parameters.Add(new SqlParameter("@CreatedDate", DateTime.Now));
+                        cmd.Parameters.Add(new SqlParameter("@Active", customer.Active));
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+
+
+                        int numRowsAffected = cmd.ExecuteNonQuery();
+                        if (numRowsAffected > 0)
+                        {
+
+                            return new StatusCodeResult(StatusCodes.Status204NoContent);
+
+                        }
+                        return BadRequest($"Customer with id:{id} not found");
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                if (!CustomerFound(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+
+                    throw;
+                }
+            }
+
+
+
+        }
+        private bool CustomerFound(int id)
+
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @" Select * FROM Customer WHERE Id = @Id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    return reader.Read();
+                }
+            }
+
+
+
+
+        }
+
     }
+
 }
+
 
 
 
