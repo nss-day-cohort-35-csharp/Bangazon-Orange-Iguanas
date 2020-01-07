@@ -69,7 +69,7 @@ namespace BangazonAPI.Controllers
                     }
                     if (sortBy == "recent")
                     {
-                        cmd.CommandText += " Order By DateAdded";
+                        cmd.CommandText += " Order By DateAdded DESC";
                     }
 
 
