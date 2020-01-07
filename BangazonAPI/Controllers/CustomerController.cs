@@ -13,13 +13,13 @@ namespace BangazonAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CustomersController : ControllerBase
+    public class customersController : ControllerBase
 
     {
         private readonly IConfiguration _config;
 
 
-        public CustomersController(IConfiguration config)
+        public customersController(IConfiguration config)
         {
             _config = config;
 
@@ -44,12 +44,12 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    var DeliveryTruck = "SELECT * FROM Customer WHERE 1 = 1 ";
+                    var DeliveryTruck = "SELECT * FROM Customer WHERE 1 = 1 AND Active = 1 ";
 
 
                     if (q != null)
                     {
-                        DeliveryTruck += " AND LastName Like @q";
+                        DeliveryTruck += " AND FirstName Like @q OR LastName Like @q  ";
                         var AddNewParameter = cmd.Parameters;
                         AddNewParameter.Add(new SqlParameter("@q", "%" + q + "%"));
 
@@ -104,21 +104,14 @@ namespace BangazonAPI.Controllers
                                 });
 
                             }
-
-
-
                         }
-
                     }
                     reader.Close();
 
                     return Ok(customers);
-
                 }
             }
         }
-
-
         private async Task<Customer> GetCustomerWithProducts(int id)
         {
             using (SqlConnection conn = Connection)
@@ -129,7 +122,7 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
 
-                        cmd.CommandText += @"SELECT c.id as 
+                       cmd.CommandText += @"SELECT c.id as 
 	                                            CustomerId, 
 	                                            c.FirstName, 
 	                                            c.LastName, 
@@ -193,20 +186,11 @@ namespace BangazonAPI.Controllers
                                 };
                                 products.Add(product);
                             };
-
-
-
-
                         }
                         reader.Close();
                         return customer;
-
-
-
                     }
                 }
-
-
             }
         }
 
@@ -223,18 +207,11 @@ namespace BangazonAPI.Controllers
                     return NotFound();
                 }
                 return Ok(oneCustomerWithProducts);
-
-
             }
 
             using (SqlConnection conn = Connection)
 
             {
-
-
-
-
-
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
@@ -243,23 +220,23 @@ namespace BangazonAPI.Controllers
                                                     Customer.FirstName, 
                                                     Customer.LastName,
                                                     Customer.[Address],
+                                                    Customer.[State],
                                                     Customer.City, 
                                                     Customer.Email,
                                                     Customer.Phone,
                                                     Customer.CreatedDate,
-                                                    Customer.Active FROM Customer WHERE Id = @Id
+                                                    Customer.Active FROM Customer WHERE Id = @id
                                                     ";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
-                    List<Customer> customers = new List<Customer>();
+                    Customer customer = null;
 
-                    while (reader.Read())
+                    if (reader.Read())
                     {
-                        int currentCustomerId = reader.GetInt32(reader.GetOrdinal("Id"));
-                        var customerAlreadyAdded = customers.FirstOrDefault(i => i.Id == currentCustomerId);
-                        if (customerAlreadyAdded == null)
+
+
                         {
-                            var customer = new Customer
+                            customer = new Customer()
                             {
                                 Id = reader.GetInt32(reader.GetOrdinal("Id")),
                                 FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
@@ -274,64 +251,15 @@ namespace BangazonAPI.Controllers
 
                             };
 
-                            customers.Add(customer);
-
-
-                            var hasCustomer = !reader.IsDBNull(reader.GetOrdinal("Id"));
-
-                            if (hasCustomer)
-                            {
-                                customers.Add(new Customer()
-
-                                {
-                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                    FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                                    LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                                    Address = reader.GetString(reader.GetOrdinal("Address")),
-                                    City = reader.GetString(reader.GetOrdinal("City")),
-                                    State = reader.GetString(reader.GetOrdinal("State")),
-                                    Email = reader.GetString(reader.GetOrdinal("Email")),
-                                    Phone = reader.GetString(reader.GetOrdinal("phone")),
-                                    CreatedDate = reader.GetDateTime(reader.GetOrdinal("createdDate")),
-                                    Active = reader.GetBoolean(reader.GetOrdinal("active")),
-
-                                });
-
-                            }
-
-                            else
-                            {
-                                hasCustomer = !reader.IsDBNull(reader.GetOrdinal("Id"));
-
-                                if (hasCustomer)
-                                {
-                                    customers.Add(new Customer()
-
-                                    {
-                                        Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                        FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                                        LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                                        Address = reader.GetString(reader.GetOrdinal("Address")),
-                                        City = reader.GetString(reader.GetOrdinal("City")),
-                                        State = reader.GetString(reader.GetOrdinal("State")),
-                                        Email = reader.GetString(reader.GetOrdinal("Email")),
-                                        Phone = reader.GetString(reader.GetOrdinal("phone")),
-                                        CreatedDate = reader.GetDateTime(reader.GetOrdinal("createdDate")),
-                                        Active = reader.GetBoolean(reader.GetOrdinal("active")),
-
-                                    });
-
-
-                                }
-
-
-                            }
                         }
-
+                        reader.Close();
+                        return Ok(customer);
                     }
                     reader.Close();
+                    return NotFound();
 
-                    return Ok(customers);
+
+
                 }
 
             }
@@ -378,14 +306,14 @@ namespace BangazonAPI.Controllers
                         cmd.CommandText = @"
                                          UPDATE 
                                          Customer 
-                                         Set FirstName = @FirstName,
-                                             LastName = @LastName,
-                                             Address = @Address,
-                                             City = @City, 
-                                             State = @State,
-                                             Email = @Email,
+                                         Set  FirstName = @FirstName,
+                                              LastName = @LastName,
+                                              Address = @Address,
+                                              City = @City, 
+                                              State = @State,
+                                              Email = @Email,
                                               Phone = @Phone,
-                                              CreatedDate = @CreateDate, 
+                                              CreatedDate = @CreatedDate, 
                                               Active = @Active
                                               WHERE Id = @Id";
                         cmd.Parameters.Add(new SqlParameter("@FirstName", customer.FirstName));
@@ -421,11 +349,49 @@ namespace BangazonAPI.Controllers
                 {
 
                     throw;
+
                 }
             }
 
 
 
+        }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
+        {
+            try
+            {
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"UPDATE Customer
+                                            SET Active = @Active
+                                            WHERE Id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@Active", false));
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                        int rowsAffected = await cmd.ExecuteNonQueryAsync();
+                        if (rowsAffected > 0)
+                        {
+                            return new StatusCodeResult(StatusCodes.Status204NoContent);
+                        }
+                        throw new Exception("No rows affected");
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                if (!CustomerFound(id))
+                {
+                    return NotFound("No ID exists of that type");
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
         private bool CustomerFound(int id)
 
