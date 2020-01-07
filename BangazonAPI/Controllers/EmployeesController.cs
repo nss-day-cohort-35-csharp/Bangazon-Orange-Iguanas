@@ -31,7 +31,7 @@ namespace BangazonAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllEmployees(
             [FromQuery] string firstName,
-            [FromQuery] string lastName) 
+            [FromQuery] string lastName)
         {
             var employees = await getEmployees(firstName, lastName);
             return Ok(employees);
@@ -181,7 +181,7 @@ namespace BangazonAPI.Controllers
 
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"UPDATE Employee 
+                        cmd.CommandText = @"UPDATE Employee
                                         SET FirstName = @firstName, LastName = @lastName, 
                                         DepartmentId = @departmentId, ComputerId = @computerID, 
                                         Email = @email, IsSupervisor = @isSupervisor 

@@ -1,0 +1,1 @@
+﻿SELECT Customer.Id AS CustomerID, Customer.FirstName, Customer.LastName AS Customer  FROM Customer

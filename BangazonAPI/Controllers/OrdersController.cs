@@ -13,11 +13,11 @@ namespace BangazonAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class OrderController : ControllerBase
+    public class OrdersController : ControllerBase
     {
         private readonly IConfiguration _config;
 
-        public OrderController(IConfiguration config)
+        public OrdersController(IConfiguration config)
         {
             _config = config;
         }
@@ -265,7 +265,7 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        
+        /*
         [HttpPost("post")]
         public async Task<IActionResult> Post([FromBody] Order order)
         {
@@ -277,7 +277,7 @@ namespace BangazonAPI.Controllers
                     cmd.CommandText = @"INSERT INTO [Order] (CustomerId, UserPaymentTypeId)
                                         OUTPUT INSERTED.Id
                                         VALUES (@Customer";
-                    if (order.UserPaymentTypeId == 0)
+                    if (order.UserPaymentTypeId == null)
                     {
                         cmd.CommandText += ", NULL)";
                     }
@@ -294,6 +294,7 @@ namespace BangazonAPI.Controllers
                 }
             }
         }
+        */
 
     
 
@@ -335,7 +336,7 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        [HttpDelete("{id}/product{productid}")]
+        [HttpDelete("{id}/products{productid}")]
         public async Task<IActionResult> Delete([FromRoute] int id, int productId)
         {
             try
@@ -374,7 +375,7 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        [HttpPost("addProductToOrder")]
+        [HttpPost]
         public async Task<IActionResult> AddProductToOrder([FromBody] CustomerProduct customerProduct)
         {
             int orderId = GetCustomerId(customerProduct.CustomerId);
@@ -399,7 +400,7 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT Id FROM [Order] WHERE CustomerId = @id AND UserPaymentTypeId = 0";
+                    cmd.CommandText = "SELECT Id FROM [Order] WHERE CustomerId = @id AND UserPaymentTypeId IS NULL";
                     cmd.Parameters.Add(new SqlParameter("@id", customerId));
 
                     SqlDataReader reader = cmd.ExecuteReader();
@@ -427,19 +428,20 @@ namespace BangazonAPI.Controllers
                     Order newOrder = new Order()
                     {
                         CustomerId = customerId,
-                        UserPaymentTypeId = 0,
+                        
+                        
                     
                     };
 
-                    cmd.CommandText = @"INSERT INTO [Order] (CustomerId, UserPaymentTypeId)
+                    cmd.CommandText = @"INSERT INTO [Order] (CustomerId)
                                         OUTPUT INSERTED.Id
-                                        VALUES (@customerId, @UserPaymentTypeId)";
+                                        VALUES (@customerId)";
                     cmd.Parameters.Add(new SqlParameter("@customerId", newOrder.CustomerId));
-                    cmd.Parameters.Add(new SqlParameter("@UserPaymentTypeId", newOrder.UserPaymentTypeId));
+                   
 
                     newOrder.Id = (int)await cmd.ExecuteScalarAsync();
 
-                    return CreatedAtRoute("GetOrderProduct", new { id = newOrder.Id }, newOrder);
+                    return CreatedAtRoute("GetOrder", new { id = newOrder.Id }, newOrder);
                 }
             }
         }

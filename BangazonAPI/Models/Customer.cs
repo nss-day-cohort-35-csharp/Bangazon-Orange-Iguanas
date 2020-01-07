@@ -7,8 +7,7 @@ namespace BangazonAPI.Models
 {
     public class Customer
     {
-
-
+        
 
         public int Id { get; set; }
         public string FirstName { get; set; }
@@ -17,10 +16,14 @@ namespace BangazonAPI.Models
         public string City { get; set; }
         public string State { get; set; }
         public string Email { get; set; }
-        public int Phone { get; set; }
+        public string Phone { get; set; }
         public DateTime CreatedDate { get; set; }
         public bool Active { get; set; }
+        public List<Product> Products { get; set; } = new List<Product>();
 
-
+        internal void Add(object product)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
