@@ -32,7 +32,7 @@ namespace BangazonAPI
                 options.AddPolicy(MyAllowSpecificOrigins,
                 builder =>
                 {
-                    builder.WithOrigins("http://www.bangazon.com", "http://bangazon.com");
+                    Microsoft.AspNetCore.Cors.Infrastructure.CorsPolicyBuilder corsPolicyBuilder = builder.WithOrigins("http://www.bangazon.com", "http://bangazon.com");
                 });
             });
 
@@ -60,22 +60,11 @@ namespace BangazonAPI
 
             app.UseHttpsRedirection();
 
-
-            // Enable middleware to serve generated Swagger as a JSON endpoint.
-            app.UseSwagger();
-
-            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.),
-            // specifying the Swagger JSON endpoint.
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-            });
-
             app.UseRouting();
 
             app.UseCors(MyAllowSpecificOrigins);
 
-          
+            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {

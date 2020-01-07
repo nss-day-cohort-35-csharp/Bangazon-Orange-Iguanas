@@ -29,9 +29,7 @@ namespace BangazonAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllEmployees(
-            [FromQuery] string firstName,
-            [FromQuery] string lastName)
+        public async Task<IActionResult> GetAllPaymentTypes()
         {
             var paymentTypes = await getPaymentTypes();
             return Ok(paymentTypes);
