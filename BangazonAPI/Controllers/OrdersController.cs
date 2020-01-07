@@ -336,7 +336,7 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        [HttpDelete("{id}/product{productid}")]
+        [HttpDelete("{id}/products{productid}")]
         public async Task<IActionResult> Delete([FromRoute] int id, int productId)
         {
             try
