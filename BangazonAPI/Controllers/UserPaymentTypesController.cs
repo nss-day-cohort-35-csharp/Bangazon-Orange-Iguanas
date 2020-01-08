@@ -49,11 +49,11 @@ namespace BangazonAPI.Controllers
                         UserPaymentType userPaymentType = null;
                         List<UserPaymentType> userpayments = new List<UserPaymentType>();
 
-                        while(reader.Read())
+                        while (reader.Read())
                         {
                             int currentCustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId"));
                             //UserPaymentType newUserPaymentType = userpayments.FirstOrDefau(i => i.Id == currentCustomerId);
-                           
+
                             if (isUserPaymentType(reader.GetInt32(reader.GetOrdinal("Id"))))
                             {
                                 userPaymentType = new UserPaymentType
@@ -66,10 +66,10 @@ namespace BangazonAPI.Controllers
 
 
                                 };
-                            userpayments.Add(userPaymentType);
+                                userpayments.Add(userPaymentType);
                             }
-                            
-                            
+
+
 
 
                             if (userPaymentType == null)
@@ -78,15 +78,15 @@ namespace BangazonAPI.Controllers
                             };
 
                         }
-                            reader.Close();
-                            return Ok(userpayments);
+                        reader.Close();
+                        return Ok(userpayments);
                     }
                 }
 
 
             }
-                            return Ok();
-        }   
+            return Ok();
+        }
 
 
 
