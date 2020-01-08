@@ -7,5 +7,8 @@ namespace BangazonAPI.Models
 {
     public class ProductTypeRevenue
     {
+        public int ProductTypeId { get; set; }
+        public string ProductType{ get; set; }
+        public decimal TotalRevenue { get; set; }
     }
 }
