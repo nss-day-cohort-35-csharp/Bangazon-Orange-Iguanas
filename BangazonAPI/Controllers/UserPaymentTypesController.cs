@@ -29,49 +29,66 @@ namespace BangazonAPI.Controllers
                 return new SqlConnection(_config.GetConnectionString("DefaultConnection"));
             }
         }
-        [HttpGet("{id}", Name = "GetUserPayment")]
-        public async Task<IActionResult> Get([FromRoute] int id)
+        [HttpGet]
+        public async Task<IActionResult> Get([FromQuery] int? customerId)
         {
-            using (SqlConnection conn = Connection)
+            if (!String.IsNullOrWhiteSpace(customerId.ToString()))
             {
-                using (SqlCommand cmd = conn.CreateCommand())
+
+
+
+                using (SqlConnection conn = Connection)
                 {
-                    cmd.CommandText = @" SELECT Id,  AcctNumber, Active, CustomerId, PaymentTypeId, From UserPaymentType Where Id = @id
-            ";
-                    cmd.Parameters.Add(new SqlParameter("@id", id));
-                    SqlDataReader reader = cmd.ExecuteReader();
-
-                    UserPaymentType userPaymentType = null;
-
-
-                    if (reader.Read())
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
                     {
+                        cmd.CommandText = @" SELECT Id,  AcctNumber, Active, CustomerId, PaymentTypeId From UserPaymentType Where CustomerId = @customerId And Active = 1 ";
+                        cmd.Parameters.Add(new SqlParameter("@customerId", customerId));
+                        SqlDataReader reader = cmd.ExecuteReader();
 
-                        userPaymentType = new UserPaymentType
+                        UserPaymentType userPaymentType = null;
+                        List<UserPaymentType> userpayments = new List<UserPaymentType>();
+
+                        while(reader.Read())
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
-                            PaymentTypeId = reader.GetInt32(reader.GetOrdinal("PaymentTypeId")),
-                            AcctNumber = reader.GetString(reader.GetOrdinal("AcctNumber")),
-                            Active = reader.GetBoolean(reader.GetOrdinal("Active")),
+                            int currentCustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId"));
+                            //UserPaymentType newUserPaymentType = userpayments.FirstOrDefau(i => i.Id == currentCustomerId);
+                           
+                            if (isUserPaymentType(reader.GetInt32(reader.GetOrdinal("Id"))))
+                            {
+                                userPaymentType = new UserPaymentType
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                    CustomerId = currentCustomerId,
+                                    PaymentTypeId = reader.GetInt32(reader.GetOrdinal("PaymentTypeId")),
+                                    AcctNumber = reader.GetString(reader.GetOrdinal("AcctNumber")),
+                                    Active = reader.GetBoolean(reader.GetOrdinal("Active")),
 
 
-                        };
+                                };
+                            userpayments.Add(userPaymentType);
+                            }
+                            
+                            
 
+
+                            if (userPaymentType == null)
+                            {
+                                return NotFound($"No user payment type found with id of {customerId} ");
+                            };
+
+                        }
+                            reader.Close();
+                            return Ok(userpayments);
                     }
-                    reader.Close();
-
-                    if (userPaymentType == null)
-                    {
-                        return NotFound($"No user payment type found with id of {id} ");
-                    };
-                    return Ok(userPaymentType);
-
                 }
 
 
             }
-        }
+                            return Ok();
+        }   
+
+
 
 
         [HttpPost]
@@ -83,17 +100,17 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @" INSERT INTO UserPaymentType (AcctNumber, Active, CustomerId, PaymentTypeId)
-                                      OUTPUT INSERTED.Id VALUES (@acctNumber, @active@customerId, @PaymentTypeId)";
+                                      OUTPUT INSERTED.Id VALUES (@acctNumber, @active, @customerId, @paymentTypeId)";
                     cmd.Parameters.Add(new SqlParameter("@acctNumber", userPaymentType.AcctNumber));
                     cmd.Parameters.Add(new SqlParameter("@active", userPaymentType.Active));
                     cmd.Parameters.Add(new SqlParameter("@customerId", userPaymentType.CustomerId));
-                    cmd.Parameters.Add(new SqlParameter("@PaymentTypeId", userPaymentType.PaymentTypeId));
+                    cmd.Parameters.Add(new SqlParameter("@paymentTypeId", userPaymentType.PaymentTypeId));
 
                     int newId = (int)cmd.ExecuteScalar();
                     userPaymentType.Id = newId;
 
-                    return CreatedAtRoute("GetUserPayment", new { id = newId }, userPaymentType);
-
+                    var Value = CreatedAtAction("GetUserPayment", new { id = newId }, userPaymentType);
+                    return Value;
                 }
 
             }
@@ -150,7 +167,7 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"UPDATE Customer
+                        cmd.CommandText = @"UPDATE UserPaymentType
                                             SET Active = @Active
                                             WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@Active", false));
@@ -176,17 +193,17 @@ namespace BangazonAPI.Controllers
                     throw;
                 }
             }
-        } 
+        }
 
         private bool isUserPaymentType(int id)
         {
             using (SqlConnection conn = Connection)
-                {
+            {
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT Id, AcctNumber, Active, FROM UserPaymentType WHERE Id = @id";
-                    cmd.Parameters.Add(new SqlParameter("@id",id));
+                    cmd.CommandText = @"SELECT Id, AcctNumber, Active FROM UserPaymentType WHERE Id = @id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
 
                     SqlDataReader reader = cmd.ExecuteReader();
                     return reader.Read();
