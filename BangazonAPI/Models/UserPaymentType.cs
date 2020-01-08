@@ -14,5 +14,7 @@ namespace BangazonAPI.Models
         public string AcctNumber { get; set; }
         public bool Active { get; set; }
 
+
+
     }
 }
