@@ -130,7 +130,7 @@ namespace BangazonAPI.Controllers
                         cmd.CommandText = @"UPDATE UserPaymentType 
                                              SET AcctNumber = @acctNumber,
                                                  Active = @active WHERE id = @id";
-
+                        //Im unsure whether I should include payment typeId in the edit.... SO frustrating 
                         cmd.Parameters.Add(new SqlParameter("@acctNumber", userPaymenType.AcctNumber));
                         cmd.Parameters.Add(new SqlParameter("@active", userPaymenType.Active));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
